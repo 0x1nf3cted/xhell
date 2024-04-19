@@ -5,7 +5,7 @@ LIBS=-lncurses
 EXE=xhell
 
 
-%.o: %.c $(DEPS) 
+%.o: src/%.c $(DEPS) 
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(EXE): $(OBJ)

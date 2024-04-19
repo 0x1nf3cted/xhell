@@ -16,7 +16,7 @@ typedef struct shell
         int n_lines;
         line_t **lines;
     } shell_content_t;
-
+    unsigned int cursor_x, cursor_y;
     unsigned int c_line, c_cols;
 
 } shell_t;
@@ -56,7 +56,7 @@ void refresh_s(shell_t *sh)
 {
     for (int i = 0; i < sh->shell_content_t.n_lines; i++)
     {
-        mvprintw(i, 0, sh->shell_content_t.lines[i]->line_data);
+        mvprintw(i, 0, "%s", sh->shell_content_t.lines[i]->line_data);
     }
     refresh();
 }
@@ -84,11 +84,12 @@ int remove_char(buffer_t *buf)
     if ((buf->size == buf->cap) && buf->cap > 8)
     {
         buf->cap /= 2;
+        buf->data = realloc(buf->data, buf->cap);
     }
     if (buf->size > 0)
     {
         buf->size--;
-        buf->data = realloc(buf->data, buf->cap);
+        buf->data[buf->size] = '\0';
     }
 }
 int clear_buffer(buffer_t *buf)
@@ -119,7 +120,7 @@ int construct_new_line(shell_t *sh, char *prefix)
         return 1;
     }
     line->size = 0;
-    line->line_data = (char *)malloc(strlen(prefix) * sizeof(char));
+    line->line_data = (char *)malloc(strlen(prefix));
     if (line->line_data == NULL)
     {
         perror("Memmory allocation error");
@@ -128,7 +129,9 @@ int construct_new_line(shell_t *sh, char *prefix)
     line->line_data = strdup(prefix);
     line->size += strlen(prefix);
     sh->shell_content_t.n_lines += 1;
-    sh->shell_content_t.lines = (line_t**)realloc(sh->shell_content_t.lines, sh->shell_content_t.n_lines + 1);
+    sh->cursor_y += 1;
+    sh->cursor_x = 0;
+    sh->shell_content_t.lines = (line_t **)realloc(sh->shell_content_t.lines, sizeof(line_t *) * sh->shell_content_t.n_lines);
     if (sh->shell_content_t.lines == NULL)
     {
         perror("Memmory allocation error");
@@ -149,6 +152,7 @@ int append_buffer_to_line(shell_t *sh, buffer_t *buffer)
     }
     l->line_data = strcat(l->line_data, buffer->data);
     l->size += buffer->size;
+    sh->cursor_x += l->size;
     return 0;
 }
 
@@ -171,7 +175,7 @@ int main(void)
         exit(1);
     }
     buffer->size = 0;
-    buffer->data = malloc(sizeof(char) * 8);
+    buffer->data = malloc(8);
     if (buffer->data == NULL)
     {
         perror("Memmory allocation error");
@@ -186,7 +190,7 @@ int main(void)
         exit(1);
     }
     line->size = 0;
-    line->line_data = (char *)malloc(strlen(prefix) * sizeof(char));
+    line->line_data = (char *)malloc(strlen(prefix));
     if (line->line_data == NULL)
     {
         perror("Memmory allocation error");
@@ -198,6 +202,8 @@ int main(void)
 
     shell_t *sh = (shell_t *)malloc(sizeof(shell_t));
     sh->c_cols = 0;
+    sh->cursor_x = 0;
+    sh->cursor_y = 0;
     sh->c_line = 0;
     sh->shell_content_t.n_lines = 1;
     sh->shell_content_t.lines = malloc(sh->shell_content_t.n_lines * sizeof(char *));
@@ -206,6 +212,7 @@ int main(void)
         perror("Memmory allocation error");
         exit(1);
     }
+    sh->cursor_x += line->size;
     sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1] = line;
 
     // mvprintw(0, 0, prefix);
@@ -223,16 +230,18 @@ int main(void)
                 construct_new_line(sh, prefix);
                 refresh_s(sh);
             }
-            // else if (ch == BACKSPACE)
-            // {
-            //     remove_char(buffer);
-            //     mvprintw(sh->shell_content_t.n_lines, sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->size, sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->line_data);
-            // }
+            else if (ch == BACKSPACE)
+            {
+                remove_char(buffer);
+                mvprintw(sh->shell_content_t.n_lines - 1, sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->size, "%s", buffer->data);
+
+                // refresh_s(sh);
+            }
             else
             {
                 append_to_cmd_buffer(buffer, ch);
-                mvprintw(sh->shell_content_t.n_lines - 1, sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->size, buffer->data);
-                // refresh_s(sh);
+                mvprintw(sh->shell_content_t.n_lines - 1, sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->size, "%s", buffer->data);
+                //  refresh_s(sh);
             }
         }
     }
