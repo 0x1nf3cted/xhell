@@ -1,8 +1,8 @@
 CC=gcc
-CFLAGS=-I.
-OBJ = xhell.o
+CFLAGS=-I. -ggdb
+OBJ = src/xhell.o
 LIBS=-lncurses
-EXE=xhell
+EXE=xhell.elf #Specifying .elf so .gitignore can pick it up
 
 
 %.o: %.c $(DEPS) 
