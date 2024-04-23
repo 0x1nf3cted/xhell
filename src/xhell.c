@@ -2,6 +2,9 @@
 #include <ncurses.h> /* for screen display */
 #include <string.h>
 #include <stdlib.h>
+
+#include "xhell.h"
+
 #include <unistd.h> // for STDIN_FILENO
 #include "buffer.h"
 
@@ -32,6 +35,7 @@ enum Keypress
     RIGHT_ARROW = 77,
     LEFT_ARROW = 75
 };
+
 
 
 /*
@@ -110,6 +114,8 @@ int append_buffer_to_line(shell_t *sh)
     free_buffer(sh->current_buffer);
 
     return 0;
+
+}
 }
 
 int main(void)
@@ -205,3 +211,4 @@ int main(void)
     endwin();
     return 0;
 }
+
