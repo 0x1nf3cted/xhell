@@ -16,26 +16,6 @@
         }                                      \
     } while (0)
 
-typedef struct line
-{
-    int size;
-    char *line_data;
-} line_t;
-
-typedef struct shell
-{
-    struct state_t
-    {
-        int n_lines;
-        line_t **lines;
-    } shell_content_t;
-    buffer_t *current_buffer;
-    unsigned int cursor_x, cursor_y;
-    unsigned int c_line, c_cols;
-    char *prefix;
-
-} shell_t;
-
 enum Keypress
 {
     ENTER = 10,
@@ -68,6 +48,7 @@ void refresh_s(shell_t *sh)
     clrtoeol();                               // clear line
     mvprintw(sh->shell_content_t.n_lines - 1, 0, "%s", sh->prefix);
     mvprintw(sh->shell_content_t.n_lines - 1, strlen(sh->prefix), "%s", text);
+    move(sh->cursor_y, sh->cursor_x);
     refresh();
 }
 
@@ -86,14 +67,16 @@ int construct_new_line(shell_t *sh)
     sh->shell_content_t.n_lines++;
 
     sh->current_buffer = create_buffer(8);
+    sh->cursor_y++;
+    sh->cursor_x = strlen(sh->prefix);
 
     return 0;
 }
 
 /*
 this wierd function will basically append the current buffer + the prefix to the last line
-
 */
+
 int append_buffer_to_line(shell_t *sh)
 {
     char *text = retrieve_text(sh->current_buffer);
@@ -147,7 +130,8 @@ int main(void)
     // this will create the gap buffer that will hold the commands
     construct_new_line(sh);
     // refresh the screen
-    refresh_s(sh);
+    sh->cursor_y = 0;
+    sh->cursor_x = strlen(prefix);
 
     refresh_s(sh);
     char ch;
@@ -164,23 +148,23 @@ int main(void)
                     int ch3 = getchar();
                     if (ch3 == 65)
                     { // A
-                        printf("Up arrow\n");
+                        printf("Up arrow");
                     }
                     else if (ch3 == 66)
                     { // B
-                        printf("Down arrow\n");
+                        printf("Down arrow");
                     }
                     /*
                     not working for now, it will cause a seg fault*/
                     else if (ch3 == 67)
                     { // C
-                      // move_cursor_right(sh->current_buffer);
-                      // refresh_s(sh->current_buffer);
+                        move_cursor_right(sh);
+                        refresh_s(sh);
                     }
                     else if (ch3 == 68)
                     { // D
-                      // move_cursor_left(sh->current_buffer);
-                      // refresh_s(sh->current_buffer);
+                        move_cursor_left(sh);
+                        refresh_s(sh);
                     }
                 }
             }
@@ -198,12 +182,13 @@ int main(void)
 
             else if (ch == BACKSPACE)
             {
-                backspace_character(sh->current_buffer);
+                backspace_character(sh);
+
                 refresh_s(sh);
             }
             else
             {
-                insert_character(sh->current_buffer, ch);
+                insert_character(sh, ch);
                 refresh_s(sh);
             }
         }

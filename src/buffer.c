@@ -93,47 +93,54 @@ bool expand_buffer_t(buffer_t *buf, size_t new_size)
   return true;
 }
 
-bool insert_character(buffer_t *buf, char c)
+bool insert_character(shell_t *sh, char c)
 {
-  if (buf->cursor_pos == buf->gap_end_pos)
+  if (sh->current_buffer->cursor_pos == sh->current_buffer->gap_end_pos)
   {
-    size_t new_size = buf->total_size * 2;
-    if (!expand_buffer_t(buf, new_size))
+    size_t new_size = sh->current_buffer->total_size * 2;
+    if (!expand_buffer_t(sh->current_buffer, new_size))
     {
       return false;
     }
   }
-  buf->storage[buf->cursor_pos++] = c;
+  sh->current_buffer->storage[sh->current_buffer->cursor_pos++] = c;
+  sh->cursor_x++;
+
   return true;
 }
 
-void move_cursor_left(buffer_t *buf)
+void move_cursor_left(shell_t *sh)
 {
-  if (buf->cursor_pos > 0)
+  if (sh->current_buffer->cursor_pos > 0)
   {
-    buf->storage[--buf->gap_end_pos] = buf->storage[--buf->cursor_pos];
+    sh->current_buffer->storage[--sh->current_buffer->gap_end_pos] = sh->current_buffer->storage[--sh->current_buffer->cursor_pos];
+    sh->cursor_x--;
   }
 }
 
-void move_cursor_right(buffer_t *buf)
+void move_cursor_right(shell_t *sh)
 {
-  if (buf->gap_end_pos < buf->total_size)
+  if (sh->current_buffer->gap_end_pos < sh->current_buffer->total_size)
   {
-    buf->storage[buf->cursor_pos++] = buf->storage[buf->gap_end_pos++];
+    sh->current_buffer->storage[sh->current_buffer->cursor_pos++] = sh->current_buffer->storage[sh->current_buffer->gap_end_pos++];
+    sh->cursor_x++;
   }
 }
 
-void backspace_character(buffer_t *buf)
+void backspace_character(shell_t *sh)
 {
-  if (buf->cursor_pos > 0)
+  if (sh->current_buffer->cursor_pos > 0)
   {
-    buf->cursor_pos--;
+    sh->current_buffer->cursor_pos--;
+    sh->cursor_x--;
   }
-  if (used_text_size(buf) < buf->total_size / 4)
+  if (used_text_size(sh->current_buffer) < sh->current_buffer->total_size / 4)
   {
-    shrink_buffer_t(buf, buf->total_size / 2);
+    shrink_buffer_t(sh->current_buffer, sh->current_buffer->total_size / 2);
   }
 }
+
+
 
 char *
 retrieve_text(buffer_t *buf)
@@ -152,8 +159,6 @@ retrieve_text(buffer_t *buf)
   text[used_text_size(buf)] = '\0';
   return text;
 }
-
-
 
 void clear_buffer(buffer_t *buf)
 {
