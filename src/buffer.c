@@ -153,6 +153,8 @@ retrieve_text(buffer_t *buf)
   return text;
 }
 
+
+
 void clear_buffer(buffer_t *buf)
 {
   buf->cursor_pos = 0;

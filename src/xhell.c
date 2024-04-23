@@ -5,6 +5,7 @@
 #include <unistd.h> // for STDIN_FILENO
 #include "buffer.h"
 
+// check if the allocation was successful
 #define ALLOC_CHECK(ptr)                       \
     do                                         \
     {                                          \
@@ -51,6 +52,10 @@ enum Keypress
     LEFT_ARROW = 75
 };
 
+/*
+refresh the screen each time the function is called
+*/
+
 void refresh_s(shell_t *sh)
 {
     char *text = retrieve_text(sh->current_buffer);
@@ -59,33 +64,65 @@ void refresh_s(shell_t *sh)
     {
         mvprintw(i, 0, "%s", sh->shell_content_t.lines[i]->line_data);
     }
-    write(STDOUT_FILENO, "\033[2K\033[G", 7);
+    move(sh->shell_content_t.n_lines - 1, 0); // move to begining of line
+    clrtoeol();                               // clear line
+    mvprintw(sh->shell_content_t.n_lines - 1, 0, "%s", sh->prefix);
     mvprintw(sh->shell_content_t.n_lines - 1, strlen(sh->prefix), "%s", text);
     refresh();
 }
+
+/*
+create a new line and add it to the shell
+*/
 
 int construct_new_line(shell_t *sh)
 {
     line_t *line = (line_t *)malloc(sizeof(line_t));
     ALLOC_CHECK(line);
-    line->size = sizeof(strlen(sh->prefix));
-    line->line_data = malloc(line->size);
-    ALLOC_CHECK(line->line_data);
-    strcat(line->line_data, sh->prefix);
 
     sh->shell_content_t.lines = realloc(sh->shell_content_t.lines, (sh->shell_content_t.n_lines + 1) * sizeof(line_t *));
     ALLOC_CHECK(sh->shell_content_t.lines);
     sh->shell_content_t.lines[sh->shell_content_t.n_lines] = line;
     sh->shell_content_t.n_lines++;
 
+    sh->current_buffer = create_buffer(8);
+
     return 0;
 }
 
-int append_buffer_to_line(shell_t *sh, buffer_t *buf)
+/*
+this wierd function will basically append the current buffer + the prefix to the last line
+
+*/
+int append_buffer_to_line(shell_t *sh)
 {
-    char *text = retrieve_text(buf);
+    char *text = retrieve_text(sh->current_buffer);
     ALLOC_CHECK(text);
-    strcat(sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->line_data, text);
+    // some real crappy code; will refactor later
+    sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->size = strlen(sh->prefix);
+    size_t len = sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->size;
+    sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->line_data = malloc(len);
+    ALLOC_CHECK(sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->line_data);
+    strcat(sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->line_data, sh->prefix);
+
+    // Get the lengths of the strings
+    size_t line_len = strlen(sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->line_data);
+    size_t text_len = strlen(text);
+
+    // Allocate enough space for the new string
+    char *new_line = malloc(line_len + text_len + 1); // +1 for the null terminator
+    ALLOC_CHECK(new_line);
+
+    // Concatenate the strings
+    strncpy(new_line, sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->line_data, line_len);
+    strcat(new_line, text);
+
+    // Free the old line and replace it with the new one
+    free(sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->line_data);
+    sh->shell_content_t.lines[sh->shell_content_t.n_lines - 1]->line_data = new_line;
+
+    free(text);
+    free_buffer(sh->current_buffer);
     return 0;
 }
 
@@ -98,6 +135,7 @@ int main(void)
 
     /*################################"" INITIALIZATION #########################################""*/
 
+    // shell struct initialization, it will hold the prefix `current directory`
     shell_t *sh = (shell_t *)malloc(sizeof(shell_t));
     ALLOC_CHECK(sh);
     sh->shell_content_t.n_lines = 0;
@@ -106,7 +144,9 @@ int main(void)
     sh->prefix = malloc(sizeof(prefix));
     ALLOC_CHECK(sh->prefix);
     sh->prefix = strdup(prefix);
+    // this will create the gap buffer that will hold the commands
     construct_new_line(sh);
+    // refresh the screen
     refresh_s(sh);
 
     refresh_s(sh);
@@ -130,23 +170,28 @@ int main(void)
                     { // B
                         printf("Down arrow\n");
                     }
+                    /*
+                    not working for now, it will cause a seg fault*/
                     else if (ch3 == 67)
                     { // C
-                        move_cursor_right(sh->current_buffer);
-                        refresh_s(sh->current_buffer);
+                      // move_cursor_right(sh->current_buffer);
+                      // refresh_s(sh->current_buffer);
                     }
                     else if (ch3 == 68)
                     { // D
-                        move_cursor_left(sh->current_buffer);
-                        refresh_s(sh->current_buffer);
+                      // move_cursor_left(sh->current_buffer);
+                      // refresh_s(sh->current_buffer);
                     }
                 }
             }
 
             else if (ch == ENTER)
             {
-                append_buffer_to_line(sh, sh->current_buffer);
-                clear_buffer(sh->current_buffer);
+                /*
+                each time enter is clicked we will append the current buffer + the prefix to the current line
+                and then construct a new line that will hold the data for the next command
+                */
+                append_buffer_to_line(sh);
                 construct_new_line(sh);
                 refresh_s(sh);
             }
@@ -163,7 +208,6 @@ int main(void)
             }
         }
     }
-
     free_buffer(sh->current_buffer);
     endwin();
     return 0;
