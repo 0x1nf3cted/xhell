@@ -16,6 +16,7 @@
         }                                      \
     } while (0)
 
+
 enum Keypress
 {
     ENTER = 10,
@@ -31,6 +32,7 @@ enum Keypress
     RIGHT_ARROW = 77,
     LEFT_ARROW = 75
 };
+
 
 /*
 refresh the screen each time the function is called
@@ -106,17 +108,21 @@ int append_buffer_to_line(shell_t *sh)
 
     free(text);
     free_buffer(sh->current_buffer);
+
     return 0;
 }
 
 int main(void)
 {
     initscr();
+
     noecho();
     char prefix[] = "/home/user > ";
+
     refresh();
 
     /*################################"" INITIALIZATION #########################################""*/
+
 
     // shell struct initialization, it will hold the prefix `current directory`
     shell_t *sh = (shell_t *)malloc(sizeof(shell_t));
@@ -140,6 +146,7 @@ int main(void)
 
         while (ch = getch())
         {
+
             if (ch == 27)
             { // Escape character
                 int ch2 = getchar();
@@ -194,6 +201,7 @@ int main(void)
         }
     }
     free_buffer(sh->current_buffer);
+
     endwin();
     return 0;
 }
