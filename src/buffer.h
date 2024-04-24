@@ -1,16 +1,13 @@
-#ifndef buffer_t_H
-#define buffer_t_H
+#ifndef BUFFER_H
+#define BUFFER_H
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/param.h>
+#include <stddef.h> // for size_t
 
-#define MIN_buffer_t_SIZE 1024
+// typedef struct shell shell_t; // Forward declaration
 
-typedef struct Gapbuffer_t
+typedef struct buffer_t
 {
   size_t total_size;
   size_t cursor_pos;
@@ -55,4 +52,4 @@ void delete_character(buffer_t *buf);
 char *retrieve_text(buffer_t *buf);
 void clear_buffer(buffer_t *buf);
 
-#endif // buffer_t_H
+#endif // BUFFER_H

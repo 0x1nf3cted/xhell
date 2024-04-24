@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
-
 #include "buffer.h"
 
 #define MIN_buffer_t_SIZE 1024
@@ -139,8 +138,6 @@ void backspace_character(shell_t *sh)
     shrink_buffer_t(sh->current_buffer, sh->current_buffer->total_size / 2);
   }
 }
-
-
 
 char *
 retrieve_text(buffer_t *buf)

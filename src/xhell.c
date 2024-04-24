@@ -2,13 +2,9 @@
 #include <ncurses.h> /* for screen display */
 #include <string.h>
 #include <stdlib.h>
-
-#include "xhell.h"
-
 #include <unistd.h> // for STDIN_FILENO
 #include "buffer.h"
 
-// check if the allocation was successful
 #define ALLOC_CHECK(ptr)                       \
     do                                         \
     {                                          \
@@ -18,6 +14,7 @@
             exit(1);                           \
         }                                      \
     } while (0)
+
 
 
 enum Keypress
@@ -36,7 +33,7 @@ enum Keypress
     LEFT_ARROW = 75
 };
 
-
+// check if the allocation was successful
 
 /*
 refresh the screen each time the function is called
@@ -114,8 +111,6 @@ int append_buffer_to_line(shell_t *sh)
     free_buffer(sh->current_buffer);
 
     return 0;
-
-}
 }
 
 int main(void)
@@ -128,7 +123,6 @@ int main(void)
     refresh();
 
     /*################################"" INITIALIZATION #########################################""*/
-
 
     // shell struct initialization, it will hold the prefix `current directory`
     shell_t *sh = (shell_t *)malloc(sizeof(shell_t));
@@ -196,7 +190,6 @@ int main(void)
             else if (ch == BACKSPACE)
             {
                 backspace_character(sh);
-
                 refresh_s(sh);
             }
             else
@@ -211,4 +204,3 @@ int main(void)
     endwin();
     return 0;
 }
-

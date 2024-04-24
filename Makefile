@@ -1,32 +1,41 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -g -lncurses
+CFLAGS = -Wall -Wextra -g -lncurses 
 SRC_DIR = src
+TEST_DIR = tests
 BUILD_DIR = build
 EXECUTABLE = xhell
+TEST_EXECUTABLE = test_xhell
 
-# List of source files
 SRCS = $(wildcard $(SRC_DIR)/*.c)
+TEST_SRCS = $(wildcard $(TEST_DIR)/*.cpp)
 
-# List of object files
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
+TEST_OBJS = $(patsubst $(TEST_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(TEST_SRCS)) $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
 
 # Main target
 all: $(EXECUTABLE)
 
-# Rule to build the executable
 $(EXECUTABLE): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ -lncurses
 
-# Rule to compile source files into object files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-# Clean rule
-clean:
-	rm -f $(BUILD_DIR)/*.o $(EXECUTABLE)
+$(BUILD_DIR)/%.o: $(TEST_DIR)/%.cpp
+	$(CC) $(CFLAGS) -I$(SRC_DIR) -c -o $@ $<
 
-# Run rule
+$(TEST_EXECUTABLE): $(TEST_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ -lgtest -lgtest_main -pthread
+
+clean:
+	rm -f $(BUILD_DIR)/*.o $(EXECUTABLE) $(TEST_EXECUTABLE)
+
+# Run executable
 run: $(EXECUTABLE)
 	./$(EXECUTABLE)
 
-.PHONY: all clean run
+# Run tests
+test: $(TEST_EXECUTABLE)
+	./$(TEST_EXECUTABLE)
+
+.PHONY: all clean run test
